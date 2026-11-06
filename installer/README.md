@@ -16,7 +16,7 @@ Fechar a OrcaSlicer não desliga o Marlinraker nem interrompe uma impressão.
 Requisitos: Ubuntu 22.04 ou mais novo, de 64 bits (amd64).
 
 ```bash
-sudo apt install ./marlinraker-desktop_1.0.0_amd64.deb
+sudo apt install ./marlinraker-desktop_1.0.1_amd64.deb
 ```
 
 O `apt` instala o Docker e o Docker Compose, se faltarem, e adiciona seu usuário ao grupo `docker`. **Saia da sessão e entre de novo** antes do primeiro uso.
@@ -47,7 +47,7 @@ Para desinstalar:
 
 Requisitos: Windows 10 ou 11 de 64 bits e o Docker Desktop com o backend WSL 2, que é o padrão.
 
-Execute `MarlinrakerDesktopSetup-1.0.0.exe`. O instalador não é assinado, então o Windows pode mostrar o aviso do SmartScreen; para continuar, clique em "Mais informações" e depois em "Executar assim mesmo". O instalador:
+Execute `MarlinrakerDesktopSetup-1.0.1.exe`. O instalador não é assinado, então o Windows pode mostrar o aviso do SmartScreen; para continuar, clique em "Mais informações" e depois em "Executar assim mesmo". O instalador:
 
 - confere se o Docker Desktop está instalado e oferece instalar pelo `winget`;
 - instala o [usbipd-win](https://github.com/dorssel/usbipd-win), que repassa o USB da impressora ao Docker;
@@ -76,6 +76,12 @@ Depois de instalar, abra o **Marlinraker (Mainsail)** e vá em *Machine* para ed
 - `printer.toml`: área de impressão, temperaturas e macros. Para impressoras delta, use `kinematics = "delta"` e `print_radius`, como em `config/printers/generic_delta.toml`.
 
 Na OrcaSlicer, configure a conexão da impressora como **Octo/Klipper**, com o endereço `localhost:7125`.
+
+O nome que aparece no Mainsail (e na aba Device da OrcaSlicer) é `marlinraker`. Para trocar, use a engrenagem no canto superior direito do Mainsail, depois **General → Printer Name**.
+
+No menu de energia do Mainsail:
+- **Shutdown** desliga o Marlinraker (o container). Ele volta a ligar ao abrir o atalho.
+- **Reboot** e **Restart** reiniciam o Marlinraker.
 
 ## Gerar os instaladores
 

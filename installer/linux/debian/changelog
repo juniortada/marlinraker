@@ -1,3 +1,11 @@
+marlinraker-desktop (1.0.1) unstable; urgency=medium
+
+  * Fixed host name "marlinraker" instead of the container id.
+  * Mainsail's power menu: Shutdown stops the container, Reboot and
+    Restart start it again.
+
+ -- Junior Tada <juniortada@gmail.com>  Fri, 06 Nov 2026 00:15:00 -0300
+
 marlinraker-desktop (1.0.0) unstable; urgency=medium
 
   * Marlinraker and Mainsail in Docker for USB Marlin printers, started
