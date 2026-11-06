@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = purge ] && command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    docker volume rm marlinraker-desktop_marlinraker_files >/dev/null 2>&1 || true
+    docker images marlinraker-desktop --format '{{.Repository}}:{{.Tag}}' \
+        | xargs -r docker image rm >/dev/null 2>&1 || true
+fi
+
+if [ "$1" = remove ] || [ "$1" = purge ]; then
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database -q /usr/share/applications || true
+    fi
+fi
+
+exit 0

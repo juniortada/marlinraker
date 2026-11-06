@@ -1,0 +1,214 @@
+#!/bin/sh
+set -u
+
+SHARE_DIR=${MARLINRAKER_SHARE_DIR:-/usr/share/marlinraker-desktop}
+COMPOSE_FILE="$SHARE_DIR/docker-compose.yml"
+IMAGE_ARCHIVE="$SHARE_DIR/marlinraker-image.tar.gz"
+IMAGE=$(cat "$SHARE_DIR/IMAGE" 2>/dev/null || echo "marlinraker-desktop:latest")
+API_URL="http://127.0.0.1:7125"
+FLATPAK_ID="com.orcaslicer.OrcaSlicer"
+APPIMAGE_DIRS="Applications Aplicativos Programas Downloads Desktop Documentos Documents .local/bin bin"
+
+notify() {
+    printf '%s: %s\n' "$1" "$2" >&2
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send -a Marlinraker -i marlinraker-desktop "$1" "$2" 2>/dev/null || true
+    fi
+}
+
+compose() {
+    docker compose -f "$COMPOSE_FILE" "$@"
+}
+
+container_node() {
+    compose exec -T marlinraker node -e "$1" 2>/dev/null
+}
+
+is_printing() {
+    container_node '
+        fetch("http://127.0.0.1:7125/printer/objects/query?print_stats=state")
+            .then((r) => r.json())
+            .then((j) => process.exit(["printing", "paused"].includes(j.result.status.print_stats.state) ? 0 : 1))
+            .catch(() => process.exit(1));'
+}
+
+wait_for_api() {
+    attempts=0
+    while [ "$attempts" -lt 30 ]; do
+        if container_node 'fetch("http://127.0.0.1:7125/server/info").then(() => process.exit(0)).catch(() => process.exit(1))'; then
+            return 0
+        fi
+        attempts=$((attempts + 1))
+        sleep 1
+    done
+    return 1
+}
+
+ensure_docker() {
+    if docker info >/dev/null 2>&1; then
+        return 0
+    fi
+    if command -v docker >/dev/null 2>&1 && ! id -nG | grep -qw docker && [ "$(id -u)" -ne 0 ]; then
+        notify "Marlinraker" "Seu usuário ainda não pode usar o Docker. Saia da sessão e entre de novo (o instalador adicionou você ao grupo docker)."
+    else
+        notify "Marlinraker" "O Docker não está disponível. Verifique se ele está instalado e em execução."
+    fi
+    return 1
+}
+
+ensure_image() {
+    if docker image inspect "$IMAGE" >/dev/null 2>&1; then
+        return 0
+    fi
+    docker load -i "$IMAGE_ARCHIVE" >/dev/null
+}
+
+start_server() {
+    ensure_docker || return 1
+    if ! ensure_image; then
+        notify "Marlinraker" "Não consegui carregar a imagem do Marlinraker ($IMAGE_ARCHIVE)."
+        return 1
+    fi
+    if compose start marlinraker >/dev/null 2>&1 || compose up -d --no-build marlinraker >/dev/null 2>&1; then
+        return 0
+    fi
+    notify "Marlinraker" "Não consegui iniciar o Marlinraker. Veja os detalhes com: marlinraker logs"
+    return 1
+}
+
+stop_server() {
+    ensure_docker || return 1
+    if [ "${1:-}" != "--force" ] && is_printing; then
+        notify "Marlinraker" "Há uma impressão em andamento. Use 'marlinraker stop --force' para parar mesmo assim."
+        return 1
+    fi
+    compose stop marlinraker
+}
+
+newest_appimage() {
+    for dir in $APPIMAGE_DIRS; do
+        [ -d "$HOME/$dir" ] && find "$HOME/$dir" -maxdepth 2 -type f -iname '*orca*slicer*.appimage' 2>/dev/null
+    done
+    if command -v xdg-user-dir >/dev/null 2>&1; then
+        for kind in DESKTOP DOWNLOAD; do
+            dir=$(xdg-user-dir "$kind" 2>/dev/null)
+            [ -n "$dir" ] && [ -d "$dir" ] && find "$dir" -maxdepth 2 -type f -iname '*orca*slicer*.appimage' 2>/dev/null
+        done
+    fi
+    [ -d /opt ] && find /opt -maxdepth 3 -type f -iname '*orca*slicer*.appimage' 2>/dev/null
+}
+
+pick_newest_appimage() {
+    newest_appimage | while IFS= read -r file; do
+        version=$(basename "$file" | sed -nE 's/.*[^0-9.]([0-9]+(\.[0-9]+)+).*/\1/p')
+        printf '%s\t%s\n' "${version:-0}" "$file"
+    done | sort -t "$(printf '\t')" -k1,1V | tail -n 1 | cut -f2-
+}
+
+desktop_entry_exec() {
+    for dir in "${XDG_DATA_HOME:-$HOME/.local/share}/applications" /usr/local/share/applications /usr/share/applications; do
+        [ -d "$dir" ] || continue
+        for entry in "$dir"/*.desktop; do
+            [ -f "$entry" ] || continue
+            case "$(basename "$entry")" in marlinraker-*) continue ;; esac
+            if grep -qiE '^Name=Orca ?Slicer' "$entry"; then
+                exec_line=$(grep -m1 '^Exec=' "$entry" | cut -d= -f2- | sed 's/ %[A-Za-z]//g')
+                if [ -n "$exec_line" ]; then
+                    printf '%s\n' "$exec_line"
+                    return 0
+                fi
+            fi
+        done
+    done
+    return 1
+}
+
+find_orca() {
+    if command -v flatpak >/dev/null 2>&1 && flatpak info "$FLATPAK_ID" >/dev/null 2>&1; then
+        printf 'flatpak\t%s\n' "$FLATPAK_ID"
+        return 0
+    fi
+    for command_name in orca-slicer OrcaSlicer orcaslicer; do
+        command_path=$(command -v "$command_name" 2>/dev/null) && {
+            printf 'command\t%s\n' "$command_path"
+            return 0
+        }
+    done
+    exec_line=$(desktop_entry_exec) && {
+        printf 'desktop\t%s\n' "$exec_line"
+        return 0
+    }
+    appimage=$(pick_newest_appimage)
+    if [ -n "$appimage" ]; then
+        printf 'appimage\t%s\n' "$appimage"
+        return 0
+    fi
+    return 1
+}
+
+launch_orca() {
+    found=$(find_orca) || {
+        notify "Marlinraker" "Não encontrei a OrcaSlicer neste computador. Abrindo o Mainsail no navegador."
+        open_mainsail_when_ready
+        return 1
+    }
+    kind=$(printf '%s' "$found" | cut -f1)
+    target=$(printf '%s' "$found" | cut -f2-)
+    case "$kind" in
+        flatpak) exec flatpak run --file-forwarding "$target" @@u "$@" @@ ;;
+        command) exec "$target" "$@" ;;
+        desktop) exec sh -c "$target \"\$@\"" orca-slicer "$@" ;;
+        appimage)
+            [ -x "$target" ] || chmod u+x "$target" 2>/dev/null
+            exec "$target" "$@"
+            ;;
+    esac
+}
+
+open_mainsail_when_ready() {
+    wait_for_api || true
+    xdg-open "$API_URL/" >/dev/null 2>&1 &
+}
+
+usage() {
+    cat <<'USAGE'
+Uso: marlinraker <comando>
+
+  orca [arquivos]   Liga o Marlinraker e abre a OrcaSlicer
+  mainsail          Liga o Marlinraker e abre o Mainsail no navegador
+  start             Liga o Marlinraker
+  stop [--force]    Desliga o Marlinraker (recusa durante uma impressão)
+  status            Mostra se o Marlinraker está rodando
+  logs              Mostra o log do Marlinraker
+  find-orca         Mostra qual OrcaSlicer será aberta
+USAGE
+}
+
+command_name=${1:-orca}
+[ "$#" -gt 0 ] && shift
+
+case "$command_name" in
+    orca)
+        start_server &
+        launch_orca "$@"
+        ;;
+    mainsail)
+        start_server && open_mainsail_when_ready
+        ;;
+    start) start_server ;;
+    stop) stop_server "${1:-}" ;;
+    status) ensure_docker && compose ps marlinraker ;;
+    logs) ensure_docker && compose logs --tail 200 marlinraker ;;
+    find-orca)
+        find_orca || {
+            echo "OrcaSlicer não encontrada" >&2
+            exit 1
+        }
+        ;;
+    is-printing) ensure_docker && is_printing ;;
+    -h|--help|help) usage ;;
+    *)
+        usage >&2
+        exit 2
+        ;;
+esac
