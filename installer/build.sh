@@ -24,5 +24,8 @@ run_builder() {
 echo "- Pacote .deb (Ubuntu)"
 run_builder sh installer/linux/build-deb.sh "$VERSION"
 
+echo "- Instalador .exe (Windows)"
+run_builder sh installer/windows/build-exe.sh "$VERSION"
+
 rm "$DIST/marlinraker-image.tar.gz"
 ls -lh "$DIST"
