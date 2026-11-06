@@ -1,0 +1,6 @@
+marlinraker-desktop (1.0.0) unstable; urgency=medium
+
+  * Marlinraker and Mainsail in Docker for USB Marlin printers, started
+    together with the OrcaSlicer installed on the computer.
+
+ -- Junior Tada <juniortada@gmail.com>  Thu, 05 Nov 2026 22:50:00 -0300

@@ -1,0 +1,15 @@
+Package: marlinraker-desktop
+Version: @VERSION@
+Architecture: amd64
+Maintainer: Junior Tada <juniortada@gmail.com>
+Installed-Size: @INSTALLED_SIZE@
+Depends: docker.io | docker-ce, docker-compose-v2 | docker-compose-plugin, xdg-utils
+Recommends: libnotify-bin
+Section: misc
+Priority: optional
+Homepage: https://github.com/juniortada/marlinraker
+Description: Marlinraker and Mainsail for USB Marlin printers in OrcaSlicer
+ Runs Marlinraker with the Mainsail web interface in Docker, so OrcaSlicer
+ can send prints to a Marlin printer connected by USB as if it were an
+ OctoPrint host at localhost:7125. The "OrcaSlicer + Marlinraker" menu entry
+ starts the server and opens the OrcaSlicer installed on the computer.

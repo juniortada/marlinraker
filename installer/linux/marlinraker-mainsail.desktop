@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Marlinraker (Mainsail)
+Comment=Liga o Marlinraker e abre o Mainsail no navegador
+Exec=marlinraker mainsail
+Icon=marlinraker-desktop
+Terminal=false
+Categories=Graphics;3DGraphics;Engineering;
+Keywords=3D;Printing;Marlin;Mainsail;

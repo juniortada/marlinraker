@@ -1,0 +1,16 @@
+name: marlinraker-desktop
+
+services:
+  marlinraker:
+    image: marlinraker-desktop:@VERSION@
+    ports:
+      - "127.0.0.1:7125:7125"
+    volumes:
+      - marlinraker_files:/marlinraker_files
+      - /dev:/dev
+    device_cgroup_rules:
+      - "c 188:* rmw"
+      - "c 166:* rmw"
+
+volumes:
+  marlinraker_files:

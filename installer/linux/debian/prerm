@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+COMPOSE_FILE=/usr/share/marlinraker-desktop/docker-compose.yml
+
+case "$1" in
+    remove|upgrade|deconfigure)
+        if docker info >/dev/null 2>&1; then
+            if marlinraker is-printing; then
+                echo "Há uma impressão em andamento no Marlinraker. Tente novamente quando ela terminar." >&2
+                exit 1
+            fi
+            docker compose -f "$COMPOSE_FILE" down >/dev/null 2>&1 || true
+        fi
+        ;;
+esac
+
+exit 0

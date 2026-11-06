@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: marlinraker
+Source: https://github.com/juniortada/marlinraker
+
+Files: *
+Copyright: 2022-2023 pauhull and Marlinraker contributors
+           2026 Junior Tada
+License: GPL-3.0
+ On Debian systems, the complete text of the GNU General Public License
+ version 3 can be found in /usr/share/common-licenses/GPL-3.

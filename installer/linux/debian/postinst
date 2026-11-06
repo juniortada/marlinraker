@@ -1,0 +1,47 @@
+#!/bin/sh
+set -e
+
+SHARE_DIR=/usr/share/marlinraker-desktop
+IMAGE=$(cat "$SHARE_DIR/IMAGE")
+
+desktop_user() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then
+        echo "$SUDO_USER"
+    elif [ -n "${PKEXEC_UID:-}" ]; then
+        getent passwd "$PKEXEC_UID" | cut -d: -f1
+    fi
+}
+
+load_image() {
+    if ! docker info >/dev/null 2>&1; then
+        echo "Docker não está em execução: a imagem do Marlinraker será carregada na primeira vez que ele for aberto."
+        return 0
+    fi
+    docker load -i "$SHARE_DIR/marlinraker-image.tar.gz" >/dev/null
+    docker images marlinraker-desktop --format '{{.Repository}}:{{.Tag}}' \
+        | grep -vx "$IMAGE" \
+        | xargs -r docker image rm >/dev/null 2>&1 || true
+}
+
+add_user_to_docker_group() {
+    user=$(desktop_user)
+    [ -n "$user" ] || return 0
+    getent group docker >/dev/null || return 0
+    if ! id -nG "$user" | grep -qw docker; then
+        usermod -aG docker "$user"
+        echo "O usuário $user foi adicionado ao grupo docker. Saia da sessão e entre de novo antes de abrir o Marlinraker."
+    fi
+}
+
+if [ "$1" = configure ]; then
+    load_image
+    add_user_to_docker_group
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database -q /usr/share/applications || true
+    fi
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -q -t /usr/share/icons/hicolor || true
+    fi
+fi
+
+exit 0
