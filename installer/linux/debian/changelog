@@ -1,3 +1,11 @@
+marlinraker-desktop (1.0.2) unstable; urgency=high
+
+  * Prints ran at about 8 G-code lines per second on Node.js 26 and
+    Marlinraker shut down when a print reached the end of its file.
+    Both are fixed.
+
+ -- Junior Tada <juniortada@gmail.com>  Fri, 06 Nov 2026 21:45:00 -0300
+
 marlinraker-desktop (1.0.1) unstable; urgency=medium
 
   * Fixed host name "marlinraker" instead of the container id.

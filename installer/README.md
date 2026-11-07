@@ -16,7 +16,7 @@ Fechar a OrcaSlicer não desliga o Marlinraker nem interrompe uma impressão.
 Requisitos: Ubuntu 22.04 ou mais novo, de 64 bits (amd64).
 
 ```bash
-sudo apt install ./marlinraker-desktop_1.0.1_amd64.deb
+sudo apt install ./marlinraker-desktop_1.0.2_amd64.deb
 ```
 
 O `apt` instala o Docker e o Docker Compose, se faltarem, e adiciona seu usuário ao grupo `docker`. **Saia da sessão e entre de novo** antes do primeiro uso.
@@ -47,7 +47,7 @@ Para desinstalar:
 
 Requisitos: Windows 10 ou 11 de 64 bits e o Docker Desktop com o backend WSL 2, que é o padrão.
 
-Execute `MarlinrakerDesktopSetup-1.0.1.exe`. O instalador não é assinado, então o Windows pode mostrar o aviso do SmartScreen; para continuar, clique em "Mais informações" e depois em "Executar assim mesmo". O instalador:
+Execute `MarlinrakerDesktopSetup-1.0.2.exe`. O instalador não é assinado, então o Windows pode mostrar o aviso do SmartScreen; para continuar, clique em "Mais informações" e depois em "Executar assim mesmo". O instalador:
 
 - confere se o Docker Desktop está instalado e oferece instalar pelo `winget`;
 - instala o [usbipd-win](https://github.com/dorssel/usbipd-win), que repassa o USB da impressora ao Docker;
